@@ -6,6 +6,7 @@ import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import org.assertj.core.util.Lists;
@@ -169,20 +170,14 @@ public class BasicsTest {
     public void subscribeOn() throws InterruptedException {
         Observable<Integer> input = Observable.just(1, 2, 3);
 
-        // Different implementation od delay
-        Function<Integer, Observable<Integer>> delay = i -> Observable.fromCallable(() -> {
-            logger.debug(Thread.currentThread().getName());
-            Thread.sleep(1000);
-            return i;
-        });
-
-        Observable<Integer> result = null;
+        // Something is missing
+        Observable<Integer> result = input.flatMap(i -> longProcessing(i));
 
         long timeBefore = System.currentTimeMillis();
         result.test().await();
         long timeAfter = System.currentTimeMillis();
         long difference = timeAfter - timeBefore;
-        // All 3 operations should be evaluated at the same time
+        // All 3 processings should be started at the same time
         assertThat(difference).isCloseTo(1000L, withPercentage(50));
     }
 
@@ -194,17 +189,14 @@ public class BasicsTest {
     public void concatMap() throws InterruptedException {
         Observable<Integer> input = Observable.just(3, 2, 1);
 
-        Function<Integer, Observable<Integer>> delay = i -> Observable.fromCallable(() -> {
-            // First element is delayed by 300ms, second by 200ms and third by 100ms
-            Thread.sleep(100 * i);
-            return i;
-        });
+        // Processing will take 3s for first element, 2s for second and 1s for third
+        // Two things are missing here
+        Observable<Integer> result = input.concatMap(i -> proportionalProcessing(i));
 
-        Observable<Integer> result = null;
-
-        // All 3 operations should be evaluated at the same time, while order of items should be the same as original
-        result.test()
-                .awaitDone(350, MILLISECONDS)
+        // All 3 processings should be started at the same time, while order of items should be the same as original
+        result.subscribeOn(Schedulers.computation())
+                .test()
+                .awaitDone(3100, MILLISECONDS)
                 .assertNoTimeout()
                 .assertValues(3, 2, 1);
     }
@@ -369,6 +361,28 @@ public class BasicsTest {
 
         sequential.test().await()
                 .assertValues("B", "C", "A");
+    }
+
+    /**
+     * Processing that always takes 1s to complete
+     */
+    private <T> Observable<T> longProcessing(T t) {
+        return Observable.fromCallable(() -> {
+            logger.debug(Thread.currentThread().getName());
+            Thread.sleep(1000);
+            return t;
+        });
+    }
+
+    /**
+     * Processing that takes i seconds to complete
+     */
+    private Observable<Integer> proportionalProcessing(int i) {
+        return Observable.fromCallable(() -> {
+            logger.debug(Thread.currentThread().getName());
+            Thread.sleep(1000 * i);
+            return i;
+        });
     }
 
 }
