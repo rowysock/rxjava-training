@@ -1,23 +1,71 @@
 package com.syncron;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
+public class Product {
 
-@Value.Immutable
-@JsonDeserialize(as = ImmutableProduct.class)
-@JsonSerialize(as = ImmutableProduct.class)
-public interface Product {
+    private long productID;
+    private String productName;
+    private String categoryID;
+    private long unitPrice;
+    private long unitsInStock;
+    private boolean discontinued;
 
-    long productID();
+    public long getProductID() {
+        return productID;
+    }
 
-    String productName();
+    public void setProductID(long productID) {
+        this.productID = productID;
+    }
 
-    String categoryID();
+    public String getProductName() {
+        return productName;
+    }
 
-    long unitPrice();
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
 
-    long unitsInStock();
+    public String getCategoryID() {
+        return categoryID;
+    }
 
-    boolean discontinued();
+    public void setCategoryID(String categoryID) {
+        this.categoryID = categoryID;
+    }
+
+    public long getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(long unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public long getUnitsInStock() {
+        return unitsInStock;
+    }
+
+    public void setUnitsInStock(long unitsInStock) {
+        this.unitsInStock = unitsInStock;
+    }
+
+    public boolean isDiscontinued() {
+        return discontinued;
+    }
+
+    public void setDiscontinued(boolean discontinued) {
+        this.discontinued = discontinued;
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "productID=" + productID +
+                ", productName='" + productName + '\'' +
+                ", categoryID='" + categoryID + '\'' +
+                ", unitPrice=" + unitPrice +
+                ", unitsInStock=" + unitsInStock +
+                ", discontinued=" + discontinued +
+                '}';
+    }
 }

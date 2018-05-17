@@ -1,4 +1,4 @@
-package com.syncron;
+package com.syncron.solutions;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableConverter;
@@ -7,6 +7,7 @@ import io.reactivex.Single;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.BehaviorSubject;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import org.assertj.core.util.Lists;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -27,9 +29,9 @@ import static org.assertj.core.util.Lists.newArrayList;
 /**
  * https://raw.githubusercontent.com/wiki/ReactiveX/RxJava/images/rx-operators/legend.png
  */
-public class BasicsTest {
+public class BasicsTestSolution {
 
-    private static final Logger logger = LoggerFactory.getLogger(BasicsTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(BasicsTestSolution.class);
 
     @Test
     public void codeCompiles() {
@@ -41,7 +43,7 @@ public class BasicsTest {
      */
     @Test
     public void creation() {
-        Observable<Integer> result = null;
+        Observable<Integer> result = Observable.just(5, 10, 15);
 
         result.test().assertValues(5, 10, 15);
     }
@@ -53,7 +55,7 @@ public class BasicsTest {
     public void map() {
         Observable<Integer> input = Observable.range(1, 3);
 
-        Observable<Integer> result = null;
+        Observable<Integer> result = input.map(i -> i * 5);
 
         result.test().assertValues(5, 10, 15);
     }
@@ -65,7 +67,7 @@ public class BasicsTest {
     public void filter() {
         Observable<Integer> input = Observable.range(1, 15);
 
-        Observable<Integer> result = null;
+        Observable<Integer> result = input.filter(i -> i % 5 == 0);
 
         result.test().assertValues(5, 10, 15);
     }
@@ -79,7 +81,8 @@ public class BasicsTest {
 
         Observable<Integer> observable = Observable.just(3, 1, 2);
 
-        // should consume this observable somehow
+        // should consume this observable
+        observable.subscribe(counter::addAndGet);
 
         assertThat(counter).hasValue(6);
     }
@@ -92,7 +95,7 @@ public class BasicsTest {
     public void skipTake() {
         Observable<String> input = Observable.just("A", "B", "C", "D", "E", "F", "G");
 
-        Observable<String> result = null;
+        Observable<String> result = input.skip(2).take(3);
 
         result.test().assertValues("C", "D", "E");
     }
@@ -105,7 +108,7 @@ public class BasicsTest {
         Observable<Integer> input = Observable.just(1, 2, 3);
 
         // Should map each element to itself and negative
-        Observable<Integer> result = input.flatMap(null);
+        Observable<Integer> result = input.flatMap(i -> Observable.just(i, -i));
 
         result.test().assertValues(1, -1, 2, -2, 3, -3);
     }
@@ -117,7 +120,8 @@ public class BasicsTest {
     public void toList() {
         Observable<Integer> input = Observable.just(1, 2, 3);
 
-        Single<List<Integer>> result = null;
+        // Should convert Single holding collection to Observable
+        Single<List<Integer>> result = input.toList();
 
         result.test().assertValue(newArrayList(1, 2, 3));
     }
@@ -129,7 +133,8 @@ public class BasicsTest {
     public void flattenAsObservable() {
         Single<List<Integer>> input = Single.just(Lists.newArrayList(1, 2, 3));
 
-        Observable<Integer> result = null;
+        // Should convert Single holding collection to Observable
+        Observable<Integer> result = input.flattenAsObservable(i -> i);
 
         result.test().assertValues(1, 2, 3);
     }
@@ -141,7 +146,7 @@ public class BasicsTest {
     public void repeat() {
         Observable<Integer> input = Observable.just(1, 2, 3);
 
-        Observable<Integer> result = input.flatMap(null);
+        Observable<Integer> result = input.flatMap(i -> Observable.just(i).repeat(i));
 
         result.test().assertValues(1, 2, 2, 3, 3, 3);
     }
@@ -154,7 +159,7 @@ public class BasicsTest {
         ObservableConverter<String, Single<Long>> doubleCount = o -> o.count().map(i -> i * 2);
         Observable<String> input = Observable.just("A", "B", "C");
 
-        Single<Long> result = null;
+        Single<Long> result = input.as(doubleCount);
 
         result.test().assertValue(6L);
     }
@@ -166,7 +171,7 @@ public class BasicsTest {
     public void first() throws Exception {
         // Implement function returning Single with first element of Observable
         // or Single with "X" if Observable was empty
-        ObservableConverter<String, Single<String>> firstOrX = null;
+        ObservableConverter<String, Single<String>> firstOrX = o -> o.first("X");
 
         Observable<String> inputWithValues = Observable.just("A", "B", "C");
         inputWithValues.as(firstOrX).test().assertValue("A");
@@ -183,7 +188,7 @@ public class BasicsTest {
         Observable<String> letters = Observable.just("A", "B", "C");
         Observable<Integer> numbers = Observable.just(12, 13, 14);
 
-        Observable<String> result = null;
+        Observable<String> result = letters.zipWith(numbers, (letter, number) -> letter + number);
 
         // Two observables combined into one
         result.test().assertValues("A12", "B13", "C14");
@@ -196,7 +201,7 @@ public class BasicsTest {
     public void delay() throws InterruptedException {
         Observable<Integer> input = Observable.just(1);
 
-        Observable<Integer> result = null;
+        Observable<Integer> result = input.delay(1, TimeUnit.SECONDS);
 
         TestObserver<Integer> observer = result.test();
         // Nothing at first
@@ -214,7 +219,7 @@ public class BasicsTest {
         Observable<Integer> input = Observable.just(1, 2, 3);
 
         // Something is missing
-        Observable<Integer> result = input.flatMap(i -> longProcessing(i));
+        Observable<Integer> result = input.flatMap(i -> longProcessing(i).subscribeOn(Schedulers.computation()));
 
         long timeBefore = System.currentTimeMillis();
         result.test().await();
@@ -234,7 +239,7 @@ public class BasicsTest {
 
         // Processing will take 3s for first element, 2s for second and 1s for third
         // Two things are missing here
-        Observable<Integer> result = input.concatMap(i -> proportionalProcessing(i));
+        Observable<Integer> result = input.concatMapEager(i -> proportionalProcessing(i).subscribeOn(Schedulers.computation()));
 
         // All 3 processings should be started at the same time, while order of items should be the same as original
         result.subscribeOn(Schedulers.computation())
@@ -257,7 +262,7 @@ public class BasicsTest {
                 .doOnNext(i -> counter.incrementAndGet());
 
         // should evaluate source observable only once
-        Observable<String> result = null;
+        Observable<String> result = input.publish().autoConnect(2);
 
         result.subscribe();
         result.subscribe();
@@ -275,7 +280,13 @@ public class BasicsTest {
 
         Observable<String> letters = Observable.just("A", "B", "C");
         // Should fail at letter "B", passing through others
-        Function<String, String> failAtB = letter -> null;
+        Function<String, String> failAtB = letter -> {
+            if(letter == "B") {
+                throw exceptionAtB;
+            } else {
+                return letter;
+            }
+        };
 
         letters.map(failAtB)
                 .subscribe(mockObserver);
@@ -300,7 +311,7 @@ public class BasicsTest {
         Observable<String> fallback = Observable.just("B", "C");
 
         // Should resume with fallback observable after original failed
-        Observable<String> result = null;
+        Observable<String> result = original.onErrorResumeNext(fallback);
 
         result.test().assertValues("A", "B", "C");
     }
@@ -310,11 +321,14 @@ public class BasicsTest {
      */
     @Test
     public void publishSubject() {
-        PublishSubject<Object> subject = PublishSubject.create();
+        PublishSubject<String> subject = PublishSubject.create();
 
-        TestObserver<Object> testObserver1 = subject.test();
+        TestObserver<String> testObserver1 = subject.test();
 
         // Something is missing here
+        subject.onNext("A");
+        subject.onNext("B");
+        subject.onNext("C");
 
         testObserver1.assertValues("A", "B", "C");
     }
@@ -325,7 +339,7 @@ public class BasicsTest {
     @Test
     public void subjectHoldingState() {
         // What kind of subject should it be?
-        Subject<String> subject = null;
+        Subject<String> subject = BehaviorSubject.create();
 
         TestObserver<String> testObserver1 = subject.test();
 
@@ -346,11 +360,11 @@ public class BasicsTest {
     @Test
     public void buffer() throws InterruptedException {
         // numbers from 1 to 4 emitted every 10 ms after 35 ms initial delay
-        Observable<Integer> numbers = Observable.intervalRange(1, 4, 30, 10, MILLISECONDS)
+        Observable<Integer> numbers = Observable.intervalRange(1, 4, 35, 10, MILLISECONDS)
                 .map(Long::intValue);
 
         // Should gather numbers every 30 ms
-        Observable<List<Integer>> result = null;
+        Observable<List<Integer>> result = numbers.buffer(30, MILLISECONDS);
 
         // 30 - gather nothing
         // 35 - emit 1
@@ -380,10 +394,10 @@ public class BasicsTest {
                 Observable.just("A").delay(100, MILLISECONDS));
 
         // Should combine Observables as evaluated at the same time
-        Observable<String> parallel = null;
+        Observable<String> parallel = Observable.merge(inputs);
 
         // Should combine Observables as evaluated one after another
-        Observable<String> sequential = null;
+        Observable<String> sequential = Observable.concat(inputs);
 
         parallel.test().await()
                 .assertValues("A", "B", "C");

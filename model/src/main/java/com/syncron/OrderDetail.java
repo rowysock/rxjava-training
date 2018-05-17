@@ -1,20 +1,54 @@
 package com.syncron;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
+public class OrderDetail {
 
-@Value.Immutable
-@JsonDeserialize(as = ImmutableOrderDetail.class)
-@JsonSerialize(as = ImmutableOrderDetail.class)
-public interface OrderDetail {
+    private long orderID;
 
-    Long orderID();
+    private long productID;
 
-    Long productID();
+    private long unitPrice;
 
-    Long unitPrice();
+    private long quantity;
 
-    Long quantity();
+    public long getOrderID() {
+        return orderID;
+    }
 
+    public void setOrderID(long orderID) {
+        this.orderID = orderID;
+    }
+
+    public long getProductID() {
+        return productID;
+    }
+
+    public void setProductID(long productID) {
+        this.productID = productID;
+    }
+
+    public long getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(long unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public long getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(long quantity) {
+        this.quantity = quantity;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderDetail{" +
+                "orderID=" + orderID +
+                ", productID=" + productID +
+                ", unitPrice=" + unitPrice +
+                ", quantity=" + quantity +
+                '}';
+    }
 }

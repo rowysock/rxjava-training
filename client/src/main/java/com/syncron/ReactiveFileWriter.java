@@ -7,6 +7,7 @@ import io.reactivex.ObservableConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -15,13 +16,20 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Component
 public class ReactiveFileWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ReactiveFileWriter.class);
     private static final byte[] LINE_SEPARATOR = new byte[]{'\r', '\n'};
+
     @Autowired
     ObjectMapper mapper;
 
+    /**
+     * Method used to dump Observable to file.
+     * JSON conversion is used to convert objects to String
+     * To be used with {@link Observable#as} method
+     */
     public <T> ObservableConverter<T, Completable> file(Path destination) {
         return lines -> writeLinesTo(lines, destination);
     }

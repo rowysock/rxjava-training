@@ -1,59 +1,22 @@
 package com.syncron;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.syncron.mim.MIMMapper;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 @Import(ModelConfig.class)
+@ComponentScan(basePackageClasses = RxTrainingService.class)
 public class ClientConfig {
 
-    public static final String BASE_URL = "http://localhost:8080";
-
-    @Autowired
-    ObjectMapper objectMapper;
+    public static final String BASE_URL = "https://rxjava-training.herokuapp.com";
 
     @Bean
-    Retrofit retrofit() {
-        return new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-                .build();
-    }
-
-    @Bean
-    APIService apiService() {
-        return retrofit().create(APIService.class);
-    }
-
-    @Bean
-    MIMMapper mimMapper() {
-        return new MIMMapper();
-    }
-
-    @Bean
-    RxTrainingService rxTrainingService() {
-        return new RxTrainingService();
-    }
-
-    @Bean
-    ReactiveFileWriter reactiveFileWriter() {
-        return new ReactiveFileWriter();
-    }
-
-    @Bean
-    ProcessingService processingService() {
-        return new ProcessingService();
-    }
-
-    @Bean
-    SSEListenerFactory sseListenerFactory() {
-        return new SSEListenerFactory(BASE_URL);
+    WebClient webClient() {
+        return WebClient.create(BASE_URL);
     }
 }

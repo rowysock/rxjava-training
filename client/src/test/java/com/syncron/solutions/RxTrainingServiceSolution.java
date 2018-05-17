@@ -1,12 +1,11 @@
-package com.syncron;
+package com.syncron.solutions;
 
+import com.syncron.*;
 import com.syncron.mim.MIMMapper;
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,9 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class RxTrainingService {
+public class RxTrainingServiceSolution {
 
-    private static final Logger logger = LoggerFactory.getLogger(RxTrainingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(RxTrainingServiceSolution.class);
 
     @Autowired
     APIService apiService;
@@ -44,7 +43,8 @@ public class RxTrainingService {
      * - apiService.getProducts()
      */
     Observable<Product> getProducts() {
-        return null;
+        return apiService.getProducts()
+                .filter(product -> !product.isDiscontinued());
     }
 
     /**
@@ -59,7 +59,8 @@ public class RxTrainingService {
      * - apiService.getOrderDetails
      */
     Observable<OrderDetail> getOrderDetails(Observable<Product> products) {
-        return null;
+        return products.map(Product::getProductID)
+                .flatMap(apiService::getOrderDetails);
     }
 
     /**
@@ -74,7 +75,9 @@ public class RxTrainingService {
      * - apiService.getOrder
      */
     Maybe<Order> getOrder(long orderId) {
-        return null;
+        return apiService.getOrder(orderId)
+                .onErrorComplete(e -> e instanceof WebClientResponseException &&
+                        ((WebClientResponseException)e).getStatusCode() == HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -98,7 +101,20 @@ public class RxTrainingService {
      * - fileWriter.file
      */
     Completable downloadAll(Path itemsDest, Path ordersDest) {
-        return null;
+        Observable<Product> products = getProducts()
+                .publish()
+                .autoConnect(2);
+
+        Completable downloadItems = products
+                .map(mapper::mapToItem)
+                .as(fileWriter.file(itemsDest));
+
+        Completable downloadOrders = getOrderDetails(products)
+                .flatMapMaybe(orderDetail -> this.getOrder(orderDetail.getOrderID())
+                        .map(order -> mapper.mapToOrder(order, orderDetail)))
+                .as(fileWriter.file(ordersDest));
+
+        return Completable.mergeArray(downloadItems, downloadOrders);
     }
 
     /**
@@ -112,6 +128,8 @@ public class RxTrainingService {
      * - apiService.observeOrders
      */
     Disposable processOrdersLive() {
-        return null;
+        return apiService.observeOrders()
+                .buffer(2000, TimeUnit.MILLISECONDS)
+                .subscribe(processingService::processOrders);
     }
 }

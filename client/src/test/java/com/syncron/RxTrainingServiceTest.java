@@ -6,8 +6,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,9 +33,9 @@ public class RxTrainingServiceTest {
     }
 
     @Test
-    public void shouldFetchItems() throws InterruptedException {
+    public void shouldFetchProducts() throws InterruptedException {
         service.getProducts()
-                .subscribeOn(Schedulers.newThread())
+                .observeOn(Schedulers.newThread())
                 .test()
                 .awaitDone(10, TimeUnit.SECONDS)
                 .assertValueCount(69);
@@ -41,9 +43,8 @@ public class RxTrainingServiceTest {
 
     @Test
     public void shouldFetchOrderDetails() throws InterruptedException {
-        service.getProducts()
-                .flatMap(service::getOrderDetails)
-                .subscribeOn(Schedulers.newThread())
+        service.getOrderDetails(service.getProducts())
+                .observeOn(Schedulers.newThread())
                 .test()
                 .awaitDone(10, TimeUnit.SECONDS)
                 .assertNoTimeout()
@@ -52,15 +53,28 @@ public class RxTrainingServiceTest {
 
     @Test
     public void shouldFetchOrders() throws InterruptedException {
-        service.getProducts()
-                .flatMap(service::getOrderDetails)
-                .flatMapMaybe(service::getOrder)
-                .subscribeOn(Schedulers.newThread())
+        // Normal
+        service.getOrder(10383)
+                .test()
+                .awaitDone(10, TimeUnit.SECONDS)
+                .assertNoTimeout()
+                .assertValue(order -> order.getCustomerID().equals("AROUT"));
+
+        // Missing
+        service.getOrder(10380)
                 .test()
                 .awaitDone(10, TimeUnit.SECONDS)
                 .assertNoTimeout()
                 .assertNoErrors()
-                .assertValueCount(1740);
+                .assertNoValues();
+
+        // Malformed
+        service.getOrder(-6)
+                .test()
+                .awaitDone(10, TimeUnit.SECONDS)
+                .assertNoTimeout()
+                .assertError(WebClientResponseException.class)
+                .assertError(t -> ((WebClientResponseException)t).getStatusCode() == HttpStatus.BAD_REQUEST);
     }
 
     @Test

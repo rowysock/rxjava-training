@@ -1,24 +1,64 @@
 package com.syncron;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Value.Immutable
-@JsonDeserialize(as = ImmutableOrder.class)
-@JsonSerialize(as = ImmutableOrder.class)
-public interface Order {
+public class Order {
 
-    Long orderID();
+    private long orderID;
+    private String customerID;
+    private String shipName;
+    private LocalDate orderDate;
+    private BigDecimal freight;
 
-    String customerID();
+    public long getOrderID() {
+        return orderID;
+    }
 
-    String shipName();
+    public void setOrderID(long orderID) {
+        this.orderID = orderID;
+    }
 
-    LocalDate orderDate();
+    public String getCustomerID() {
+        return customerID;
+    }
 
-    BigDecimal freight();
+    public void setCustomerID(String customerID) {
+        this.customerID = customerID;
+    }
+
+    public String getShipName() {
+        return shipName;
+    }
+
+    public void setShipName(String shipName) {
+        this.shipName = shipName;
+    }
+
+    public LocalDate getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDate orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public BigDecimal getFreight() {
+        return freight;
+    }
+
+    public void setFreight(BigDecimal freight) {
+        this.freight = freight;
+    }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "orderID=" + orderID +
+                ", customerID='" + customerID + '\'' +
+                ", shipName='" + shipName + '\'' +
+                ", orderDate=" + orderDate +
+                ", freight=" + freight +
+                '}';
+    }
 }
