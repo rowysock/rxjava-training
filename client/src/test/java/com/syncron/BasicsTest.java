@@ -430,7 +430,9 @@ public class BasicsTest {
     private Observable<Integer> proportionalProcessing(int n) {
         return Observable.fromCallable(() -> {
             logger.debug("proportional processing for {} started on thread {}", n, Thread.currentThread().getName());
-            Thread.sleep(1000 * n);
+            try { Thread.sleep(1000 * n); } 
+            catch (final InterruptedException e) 
+            { System .err .format ("!\7%s\n", e); }
             return n;
         });
     }
