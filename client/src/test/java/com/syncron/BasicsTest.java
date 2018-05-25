@@ -239,7 +239,7 @@ public class BasicsTest {
         // All 3 processings should be started at the same time, while order of items should be the same as original
         result.subscribeOn(Schedulers.computation())
                 .test()
-                .awaitDone(3100 + 010000, MILLISECONDS)
+                .awaitDone(3100, MILLISECONDS)
                 .assertNoTimeout()
                 .assertValues(3, 2, 1);
     }
@@ -409,7 +409,9 @@ public class BasicsTest {
     private Observable<Integer> proportionalProcessing(int n) {
         return Observable.fromCallable(() -> {
             logger.debug("proportional processing for {} started on thread {}", n, Thread.currentThread().getName());
-            Thread.sleep(1000 * n);
+            try { Thread.sleep(1000 * n); } 
+            catch (final InterruptedException e) 
+            { System .err .format ("!\7%s\n", e); }
             return n;
         });
     }
