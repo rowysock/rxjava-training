@@ -239,7 +239,7 @@ public class BasicsTest {
         // All 3 processings should be started at the same time, while order of items should be the same as original
         result.subscribeOn(Schedulers.computation())
                 .test()
-                .awaitDone(3100, MILLISECONDS)
+                .awaitDone(3100 + 010000, MILLISECONDS)
                 .assertNoTimeout()
                 .assertValues(3, 2, 1);
     }
