@@ -4,12 +4,16 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableConverter;
 import io.reactivex.Observer;
 import io.reactivex.Single;
+import io.reactivex.exceptions.UndeliverableException;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import org.assertj.core.util.Lists;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -31,6 +35,23 @@ public class BasicsTest {
 
     private static final Logger logger = LoggerFactory.getLogger(BasicsTest.class);
 
+    @Before
+    public void setup() {
+        RxJavaPlugins.setErrorHandler(hideInterruptedException());
+    }
+
+    // Timeout causes quite ugly InterruptedException with a long stacktrace, we want to hide it for clarity
+    private Consumer<Throwable> hideInterruptedException() {
+        return e -> {
+            if(e instanceof UndeliverableException && e.getCause() instanceof InterruptedException){
+                logger.error("Thread interrupted");
+            } else {
+                Thread currentThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler handler = currentThread.getUncaughtExceptionHandler();
+                handler.uncaughtException(currentThread, e);
+            }
+        };
+    }
     @Test
     public void codeCompiles() {
         assertThat("a").isEqualTo("a");
